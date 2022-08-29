@@ -10,19 +10,20 @@ params.neighborsum = [1 1 1; 1 0 1; 1 1 1];
 %% initial conditions
 
 N = 100;
-demand = randfield(N,N,5);
-utilities = 0*demand;
-[~,ii] = max(demand(:));
+M = 50;
+demand = randfield(N,N,M,5);
+utilities = zeros(N,N);
+[~,ii] = max(demand(:,:,1),[],'all','linear');
 utilities(ii) = 2;
 
 %% Run
 
-for i = 1:50
-[utilities,cost] = update(utilities,demand,params);
+for i = 1:M
+[utilities,cost] = update(utilities,demand(:,:,i),params);
 imagesc(utilities);
 set(gca,'Ydir','normal');
 hold on
-contour(demand,'edgecolor','r');
+contour(demand(:,:,i),'edgecolor','r');
 pause(1);
 end
 
@@ -48,20 +49,20 @@ shouldUpgrade = ( e < 2 ) & ( num_neighbors > 0 ) & (d> ( params.Ccost*params.ca
 % compute centralized cost per tile
 e(shouldUpgrade) = 1;
 
-cost = sum(params.Dcost*d(e==0)+params.annualvar*d(e>1),'all');
+cost = sum(params.Dcost*d(e==0),'all')+sum(params.annualvar*d(e>1),'all');
 
 end
 
 %% helper functions
 
-function f = randfield(Nx,Ny,cutoff)
+function f = randfield(Nx,Ny,Nt,cutoff)
     
     % return a smooth, randomly varying field between zero and 1. As cutoff
     % increases, the structure of the field becomes smaller wavelength. 
-    f = fftshift(fft2(rand(Ny,Nx)));
-    [Nx,Ny] = ndgrid(((1:Ny)-Ny/2),((1:Nx)-Nx/2));
-    f(sqrt(Nx.^2+Ny.^2)>cutoff)=0;
-    f = ifft2(ifftshift(f),'symmetric');
+    f = fftshift(fftn(rand(Ny,Nx,Nt)));
+    [Nx,Ny,Nt] = ndgrid(((1:Ny)-Ny/2),((1:Nx)-Nx/2),((1:Nt)-Nt/2));
+    f(sqrt(Nx.^2+Ny.^2+Nt.^2)>cutoff)=0;
+    f = ifftn(ifftshift(f),'symmetric');
     f = f-min(f,[],'all');
     f = f/max(f,[],'all');
     

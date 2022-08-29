@@ -96,50 +96,50 @@ end
 
 function d = computeDeficit(entities,population,params)
 
-x = params.X;
-y = params.Y;
-d = population*params.UtilPerCapita;
+    x = params.X;
+    y = params.Y;
+    d = population*params.UtilPerCapita;
 
-% construct grids of what decentralized and centralized units are supplying
-% to the domain
-p = params.pointer;
-while ~isnan(p)
-    e = entities{p};
-    switch entity.type
-        case 'D'
-            
-            isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Dradius;
-            d(isServiced) = d(isServiced) - params.DoutputUtil*numel(isServiced)*population(isServiced)./sum(population(isServiced));
+    % construct grids of what decentralized and centralized units are supplying
+    % to the domain
+    p = params.pointer;
+    while ~isnan(p)
+        e = entities{p};
+        switch entity.type
+            case 'D'
 
-        case 'C'
-            
-            isServiced = e.distribution>0;
-            d(isServiced) = d(isServiced) - params.CoutputUtil*numel(isServiced)*population(isServiced)./sum(population(isServiced));
-            
-%             dtree = 0*d;
-%             isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Cradius;
-%             dtree(isServiced) = dtree(isServiced) + params.CoutputUtil;
-%             
-%             ch = e.children;
-%             n = numel(ch);
-%             p = entity.nextEntity;
-%             
-%             for c = 1:n
-%                 e = entities{ch(c)};
-%                 isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Cradius;
-%                 dtree(isServiced) = dtree(isServiced) + params.CoutputUtil;
-%             end
-%             
-%             isServiced = dtree>0;
-%             d(isServiced) = dtree(isServiced)/sum(isServiced);
-            
-        otherwise
-            error('entity type not recognized');
+                isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Dradius;
+                d(isServiced) = d(isServiced) - params.DoutputUtil*numel(isServiced)*population(isServiced)./sum(population(isServiced));
+
+            case 'C'
+
+                isServiced = e.distribution>0;
+                d(isServiced) = d(isServiced) - params.CoutputUtil*numel(isServiced)*population(isServiced)./sum(population(isServiced));
+
+    %             dtree = 0*d;
+    %             isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Cradius;
+    %             dtree(isServiced) = dtree(isServiced) + params.CoutputUtil;
+    %             
+    %             ch = e.children;
+    %             n = numel(ch);
+    %             p = entity.nextEntity;
+    %             
+    %             for c = 1:n
+    %                 e = entities{ch(c)};
+    %                 isServiced = sqrt((x-e.x).^2+(y-e.y).^2)<params.Cradius;
+    %                 dtree(isServiced) = dtree(isServiced) + params.CoutputUtil;
+    %             end
+    %             
+    %             isServiced = dtree>0;
+    %             d(isServiced) = dtree(isServiced)/sum(isServiced);
+
+            otherwise
+                error('entity type not recognized');
+        end
+
+        p = entity.next;
+
     end
-
-    p = entity.next;
-    
-end
 
 end
 
@@ -150,9 +150,9 @@ function f = randfield(Nx,Ny,cutoff)
     % return a smooth, randomly varying field between zero and 1. As cutoff
     % increases, the structure of the field becomes smaller wavelength. 
     f = fftshift(fft2(rand(Ny,Nx)));
-    [Nx,Ny] = ndgrid(((1:Ny)-Ny/2),((1:Nx)-Nx/2));
+    [Nx,Ny] = ndgrid(((.5:Ny)-Ny/2),((.5:Nx)-Nx/2));
     f(sqrt(Nx.^2+Ny.^2)>cutoff)=0;
-    f = ifft2(ifftshift(f),'symmetric');
+    f = real(ifft2(ifftshift(f)));
     f = f-min(f,[],'all');
     f = f/max(f,[],'all');
     
