@@ -1,12 +1,12 @@
 close all
 
-N = 128;
+N = 32;
 
 % four probabilities make up the dynamics
-p_plant     = 0.01; % a pun, both for plant a tree and power plant. This is the probability that a centralized node starts without the need of neighbors, i.e., becomes a power plant
-p_join      = 0.10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = 0.01; % probability that a centralized nodes undergoes an outtage
-p_recover   = 0.25; % probability that an outtage is fixed. this leaves the tile decentral
+p_plant     = 1/25/N^2; % a pun, both for plant a tree and power plant. This is the probability that a centralized node starts without the need of neighbors, i.e., becomes a power plant
+p_join      = 0.25; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+p_outtage   = 1.00; % probability that a centralized nodes undergoes an outtage
+p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 %%%%%%%%%%%% create initial state %%%%%%%%%%%%
 
@@ -19,7 +19,7 @@ e = zeros(N^2,4);
 figure;
 resizefigure(2,1);
 p = zeros(3,1);
-for k = 1:100*N^2
+for k = 1:1000*N^2
     
     [s,e] = update(s,e,p_plant,p_join,p_outtage,p_recover);
     
@@ -56,7 +56,7 @@ function [s,e] = update(s,e,p1,p2,p3,p4)
 [Ny,Nx] = size(s);
 Nn = size(e,2);
 % neighborsum = imfilter(s,[0 1 0; 1 0 1; 0 1 0],'circular');
-neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0]);
+neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0],'same');
 
 k = randi(Ny*Nx);
 [i,j] = ind2sub([Ny,Nx],k);
