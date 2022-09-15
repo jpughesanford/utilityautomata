@@ -1,17 +1,17 @@
 close all
 
-N = 32;
+N = 32+1;
 
 % four probabilities make up the dynamics
-p_plant     = 1/25/N^2; % a pun, both for plant a tree and power plant. This is the probability that a centralized node starts without the need of neighbors, i.e., becomes a power plant
 p_join      = 0.25; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = 1.00; % probability that a centralized nodes undergoes an outtage
+p_outtage   = 0.01; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 %%%%%%%%%%%% create initial state %%%%%%%%%%%%
 
 % make state of zeros
 s = zeros(N,N);
+s(round(N/2),round(N/2)) = 1;
 e = zeros(N^2,4);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -21,7 +21,7 @@ resizefigure(2,1);
 p = zeros(3,1);
 for k = 1:1000*N^2
     
-    [s,e] = update(s,e,p_plant,p_join,p_outtage,p_recover);
+    [s,e] = update(s,e,p_join,p_outtage,p_recover);
     
     if mod(k,N^2)==1
         subplot(1,2,1)
@@ -51,7 +51,7 @@ function v =mod1(v,N)
 v = mod(v-1,N)+1;
 end
 
-function [s,e] = update(s,e,p1,p2,p3,p4)
+function [s,e] = update(s,e,p1,p2,p3)
 
 [Ny,Nx] = size(s);
 Nn = size(e,2);
@@ -66,7 +66,7 @@ sij = s(i,j);
 if sij == -1
     
     % restore to decentralization with probability p4
-    if rand < p4
+    if rand < p3
         s(i,j) = 0;
     end
     
@@ -74,7 +74,7 @@ if sij == -1
 elseif sij == 0
     
     % become central with probability n*p2, where n is the number of neighboring central nodes minus the number of neighboring out nodes
-    if rand < neighborsum(i,j)*p2
+    if rand < neighborsum(i,j)*p1
         
         % set pixel to be central
         s(i,j) = 1;
@@ -110,19 +110,17 @@ elseif sij == 0
                 end
             end
         end
-    
-    % become central with p1
-    elseif rand < p1
-        s(i,j) = 1;
     end
         
 % if current pixel is CENTRAL
 elseif sij == 1
     % experience an outtage with probability p3
-    if rand < p3
+    if rand < p2
         [s,e] = propogateouttage(s,e,k);
     end
 end
+
+s(round(Ny/2),round(Nx/2)) = 1;
 
 end
 
