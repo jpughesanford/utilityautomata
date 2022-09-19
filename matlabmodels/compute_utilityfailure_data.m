@@ -1,10 +1,10 @@
 close all
 
-N = 32;
+N = 33;
 
 % four probabilities make up the dynamics
-p_join      = linspace(0,1,11); % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = linspace(0,1,11); % probability that a centralized nodes undergoes an outtage
+p_join      = linspace(0.0,1,11); % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+p_outtage   = linspace(0.0,1,11); % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 Njoin = numel(p_join);
@@ -14,6 +14,7 @@ Nout = numel(p_outtage);
 outtage_distribution = zeros(Njoin,Nout,N^2); % distribution of pixels impacted by an outtage
 % clusternumber_distribution = zeros(Njoin,Nout,N^2); % distribution of connected components
 clustersize_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
+load_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
 p = zeros(3,1); % probability a state is in empty, filled, or out
 
 for iii = 1:Njoin
@@ -23,11 +24,15 @@ for iii = 1:Njoin
 
         %% create initial state
         s = zeros(N,N);
+        s(round(end/2),round(end/2)) = 1;
         e = zeros(N^2,4);
 
         %% integrate for some time to make sure our initial condition doesnt matter
         for k = 1:1000*N^2
             [s,e] = update(s,e,p_join(iii),p_outtage(jjj),p_recover);
+%             if mod(k,100)==0
+%                 plotstate(s,e);
+%             end
         end
         
         %% integrate and collect data
@@ -45,6 +50,13 @@ for iii = 1:Njoin
                 if cs > 0
                     clustersize_distribution(iii,jjj,cs) = clustersize_distribution(iii,jjj,cs) + 1;
                 end
+%                 plotstate(s,e);
+                load_distribution(iii,jjj,:) = determineload(squeeze(load_distribution(iii,jjj,:)),e,round(N^2/2));
+                
+                p(1) = p(1) + sum(s(:)== 0);
+                p(2) = p(2) + cs;
+                p(3) = p(3) + sum(s(:)==-1);
+                
 %                 cc = bwlabel( s==1 );
 %                 cn = sum(unique(cc)>0);
 %                 if cn>0
@@ -54,10 +66,7 @@ for iii = 1:Njoin
 %                         clustersize_distribution(iii,jjj,cs) = clustersize_distribution(iii,jjj,cs) + 1;
 %                     end
 %                 end
-                p(1) = p(1) + sum(s(:)== 0);
-                p(2) = p(2) + sum(s(:)== 1);
-                p(3) = p(3) + sum(s(:)==-1);
-                
+
             end
             
         end
@@ -69,8 +78,51 @@ for iii = 1:Njoin
     end
 end
 
+
+function plotstate(s,e)
+
+imagesc(s)
+hold on
+% caxis([-1 1])
+reccursiveplot(s,e,round(numel(s)/2));
+% colormap(flip(gray));
+caxis([-1 1]);
+drawnow
+hold off
+
+end
+function reccursiveplot(s,e,k)
+
+[y1,x1] = ind2sub(size(s),k);
+
+for i = 1:size(e,2)
+   if e(k,i)
+       [y2,x2] = ind2sub(size(s),e(k,i));
+       plot([x1 x2],[y1 y2],'k');
+       reccursiveplot(s,e,e(k,i))
+   end
+end
+
+end
+
 function v =mod1(v,N)
 v = mod(v-1,N)+1;
+end
+
+function [dist,load] = determineload(dist,e,k)
+
+% [y,x] = ind2sub([sqrt(numel(dist)) sqrt(numel(dist))],k)
+load = 1;
+for i = 1:size(e,2)
+   if e(k,i)
+       [dist,childload] = determineload(dist,e,e(k,i));
+%        e(k,:)
+       load = load + childload;
+   end
+end
+dist(load) = dist(load)+1;
+
+% dist(1:8)
 end
 
 function [s,e,outtagesize] = update(s,e,p1,p2,p3)
@@ -78,7 +130,8 @@ function [s,e,outtagesize] = update(s,e,p1,p2,p3)
 [Ny,Nx] = size(s);
 Nn = size(e,2);
 % neighborsum = imfilter(s,[0 1 0; 1 0 1; 0 1 0],'circular');
-neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0]);
+% neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0],'same');
+neighborsum = round(conv_fft2(s,[0 1 0; 1 0 1; 0 1 0],'wrap'));
 outtagesize = 0;
 
 k = randi(Ny*Nx);
@@ -140,9 +193,14 @@ elseif sij == 1
     % experience an outtage with probability p3
     if rand < p2
         n = sum(s(:)==-1);
+        e(e==k) = 0;
         [s,e] = propogateouttage(s,e,k);
          outtagesize = sum(s(:)==-1)-n;
     end
+end
+
+if s(round(end/2),round(end/2)) == 0
+    s(round(end/2),round(end/2)) = 1;
 end
 
 end
