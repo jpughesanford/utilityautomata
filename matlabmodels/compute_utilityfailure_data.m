@@ -1,24 +1,40 @@
 close all
 
-N = 33;
+if isfile('data\utilityfailurescan.mat')
+    
+    load('data/utilityfailurescan','plabel','p','clustersize_distribution','outtage_distribution','iii','jjj','p_join','p_outtage','p_recover','N');
+    istart = iii;
+    jstart = jjj;
+    Njoin = numel(p_join);
+    Nout = numel(p_outtage);
+    
+else
+    
+    N = 33;
 
-% four probabilities make up the dynamics
-p_join      = linspace(0.0,1,11); % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = linspace(0.0,1,11); % probability that a centralized nodes undergoes an outtage
-p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
+    % four probabilities make up the dynamics
+    p_join      = 1.00; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+    p_outtage   = linspace(0,0.1,101); % probability that a centralized nodes undergoes an outtage
+    p_outtage(1)=[];
+    p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
-Njoin = numel(p_join);
-Nout = numel(p_outtage);
+    Njoin = numel(p_join);
+    Nout = numel(p_outtage);
 
-% create variables that store the data we're gonna save
-outtage_distribution = zeros(Njoin,Nout,N^2); % distribution of pixels impacted by an outtage
-% clusternumber_distribution = zeros(Njoin,Nout,N^2); % distribution of connected components
-clustersize_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
-load_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
-p = zeros(3,1); % probability a state is in empty, filled, or out
+    % create variables that store the data we're gonna save
+    outtage_distribution = zeros(Njoin,Nout,N^2); % distribution of pixels impacted by an outtage
+    % clusternumber_distribution = zeros(Njoin,Nout,N^2); % distribution of connected components
+    clustersize_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
+    load_distribution = zeros(Njoin,Nout,N^2); % distribution of connected component size
+    p = zeros(3,1); % probability a state is in empty, filled, or out
 
-for iii = 1:Njoin
-    for jjj = 1:Nout
+    istart = 1;
+    jstart = 1;
+    
+end
+
+for iii = istart:Njoin
+    for jjj = jstart:Nout
         
         fprintf('[%g,%g]\tp_join : %f\tp_out : %f\n',iii,jjj,p_join(iii),p_outtage(jjj));
 
@@ -73,7 +89,7 @@ for iii = 1:Njoin
         
         %% Save data
         plabel = {'empty','filled','outtage'};
-        save('data/utilityfailurescan','plabel','p','clustersize_distribution','outtage_distribution','iii','jjj','p_join','p_outtage','p_recover','N');
+        save('data/utilityfailurescan','plabel','p','clustersize_distribution','load_distribution','outtage_distribution','iii','jjj','p_join','p_outtage','p_recover','N');
         
     end
 end
