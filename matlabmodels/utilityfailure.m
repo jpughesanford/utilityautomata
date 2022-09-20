@@ -3,8 +3,8 @@ close all
 N = 32+1;
 
 % four probabilities make up the dynamics
-p_join      = 0.25; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = 0.01; % probability that a centralized nodes undergoes an outtage
+p_join      = 1.00; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+p_outtage   = 0.20; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 %%%%%%%%%%%% create initial state %%%%%%%%%%%%
@@ -24,25 +24,7 @@ for k = 1:1000*N^2
     [s,e] = update(s,e,p_join,p_outtage,p_recover);
     
     if mod(k,N^2)==1
-        subplot(1,2,1)
-        imagesc(s);
-        axis equal
-        %    xlim([1 N]);
-        %    ylim([1 N]);
-        daspect([1 1 1]);
-        caxis([-1 1]);
-        colormap(flip(rwb))
-        ylim([1 N]);
-        xlim([1 N]);
-        subplot(1,2,2)
-        p(1) = p(1) + sum(s(:)== 0);
-        p(2) = p(2) + sum(s(:)== 1);
-        p(3) = p(3) + sum(s(:)==-1);
-        P = p/sum(p);
-        bar(P);
-        text((1:numel(P))-.2,P+.02,num2cell(P))
-        ylim([0 1]);
-        drawnow
+        plotstate(s,e);
     end
     
 end
@@ -51,12 +33,14 @@ function v =mod1(v,N)
 v = mod(v-1,N)+1;
 end
 
-function [s,e] = update(s,e,p1,p2,p3)
+function [s,e,outtagesize] = update(s,e,p1,p2,p3)
 
 [Ny,Nx] = size(s);
 Nn = size(e,2);
 % neighborsum = imfilter(s,[0 1 0; 1 0 1; 0 1 0],'circular');
-neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0],'same');
+% neighborsum = conv2(s,[0 1 0; 1 0 1; 0 1 0],'same');
+neighborsum = round(conv_fft2(s,[0 1 0; 1 0 1; 0 1 0],'wrap'));
+outtagesize = 0;
 
 k = randi(Ny*Nx);
 [i,j] = ind2sub([Ny,Nx],k);
@@ -116,11 +100,16 @@ elseif sij == 0
 elseif sij == 1
     % experience an outtage with probability p3
     if rand < p2
+        n = sum(s(:)==-1);
+        e(e==k) = 0;
         [s,e] = propogateouttage(s,e,k);
+         outtagesize = sum(s(:)==-1)-n;
     end
 end
 
-s(round(Ny/2),round(Nx/2)) = 1;
+if s(round(end/2),round(end/2)) == 0
+    s(round(end/2),round(end/2)) = 1;
+end
 
 end
 
@@ -149,6 +138,55 @@ function [state,edges] = propogateouttage(state,edges,k)
         
     end
     
+end
+
+function plotstate(s,e)
+
+% imagesc(s)
+% hold on
+% % caxis([-1 1])
+% 
+% % colormap(flip(gray));
+% caxis([-1 1]);
+% drawnow
+% hold off
+
+[Ny,Nx] = size(s);
+
+subplot(1,2,1)
+imagesc(s);
+hold on
+reccursiveplot(s,e,round(numel(s)/2));
+hold off
+axis equal
+daspect([1 1 1]);
+caxis([-1 1]);
+% colormap(flip(rwb))
+ylim([1 Ny]);
+xlim([1 Nx]);
+subplot(1,2,2)
+p(1) = sum(s(:)== 0);
+p(2) = sum(s(:)== 1);
+p(3) = sum(s(:)==-1);
+P = p/sum(p);
+bar(P);
+text((1:numel(P))-.2,P+.02,num2cell(P))
+ylim([0 1]);
+drawnow
+
+end
+function reccursiveplot(s,e,k)
+
+[y1,x1] = ind2sub(size(s),k);
+
+for i = 1:size(e,2)
+   if e(k,i)
+       [y2,x2] = ind2sub(size(s),e(k,i));
+       plot([x1 x2],[y1 y2],'k');
+       reccursiveplot(s,e,e(k,i))
+   end
+end
+
 end
 
 function newmap = rwb(m)
