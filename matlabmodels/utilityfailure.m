@@ -4,7 +4,7 @@ N = 32+1;
 
 % four probabilities make up the dynamics
 p_join      = 1.00; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_outtage   = 0.20; % probability that a centralized nodes undergoes an outtage
+p_outtage   = 0.002; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 %%%%%%%%%%%% create initial state %%%%%%%%%%%%
@@ -162,8 +162,8 @@ axis equal
 daspect([1 1 1]);
 caxis([-1 1]);
 % colormap(flip(rwb))
-ylim([1 Ny]);
-xlim([1 Nx]);
+ylim([1-.5 Ny+.5]);
+xlim([1-.5 Nx+.5]);
 subplot(1,2,2)
 p(1) = sum(s(:)== 0);
 p(2) = sum(s(:)== 1);
@@ -186,9 +186,51 @@ function reccursiveplot(s,e,k)
 for i = 1:size(e,2)
    if e(k,i)
        [y2,x2] = ind2sub(size(s),e(k,i));
-       plot([x1 x2],[y1 y2],'k');
-       reccursiveplot(s,e,e(k,i))
-   end
+       if norm([x1 y1]-[x2 y2])<2
+            plot([x1 x2],[y1 y2],'k');
+       else
+           dx = x2-x1;
+           dy = y2-y1;
+           plot([x1-dx x1 nan x2 x2+dx],[y1-dy y1 nan y2 y2+dy],'k');
+       end
+
+%     if e(k,i)
+%         
+%         switch k-e(k,i)
+%             
+%             case 1 % ki is below k
+%                 plot([x1 x1],[y1 y1-1],'k');
+%                 if y1 == 1
+%                     plot([x1 x1],[Ny Ny-1],'k');
+%                 end
+%             case -1 % ki is above k
+%                 plot([x1 x1],[y1 y1+1],'k');
+%                 if y1 == Ny
+%                     plot([x1 x1],[0 1],'k');
+%                 end    
+%                 
+%             otherwise % ki is above or below k
+%                 
+%                 if k-e(k,i)>0 % ki is above k
+%                     plot([x1 x1-1],[y1 y1],'k');
+%                     if x1 == Nx
+%                         plot([Nx Nx-1],[y1 y1],'k');
+%                     end
+%                     
+%                 else % ki is below k
+%                     plot([x1 x1+1],[y1 y1],'k');
+%                     if x1 == 1
+%                         plot([0 1],[y1 y1],'k');
+%                     end
+%                     
+%                 end
+%                 
+%         end
+        
+        reccursiveplot(s,e,e(k,i))
+    end
+%        [y2,x2] = ind2sub(size(s),e(k,i));
+
 end
 
 end
