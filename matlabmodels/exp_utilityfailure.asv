@@ -18,19 +18,22 @@ e = zeros(N^2,4);
 
 %%%%%%%%%%%% Population and landscape infrastructure %%%%%%%%%%%%
 
-population = randfield(N,N,1,5);
-landscape = randfield(N,N,50,5);
+% Field maker
+function f = randfield(Nx,Ny,Nt,cutoff)
+    
+    % return a smooth, randomly varying field between zero and 1. As cutoff
+    % increases, the structure of the field becomes smaller wavelength. 
+    f = fftshift(fftn(rand(Ny,Nx,Nt)));
+    [Nx,Ny,Nt] = ndgrid(((1:Ny)-Ny/2),((1:Nx)-Nx/2),((1:Nt)-Nt/2));
+    f(sqrt(Nx.^2+Ny.^2+Nt.^2)>cutoff)=0;
+    f = ifftn(ifftshift(f),'symmetric');
+    f = f-min(f,[],'all');
+    f = f/max(f,[],'all');
+    
+end
 
-% Wishlist: find a way to get the gradient of the landscape one
-%           so I can use that as my metric for increasing or 
-%           decreasing probs. 
-% Current approach: use just the plain value as the metric. Less
-%           good because you can have a plateau high up that's 
-%           still easy to build on. It's the slopes that really 
-%           make things hard. 
-%           Also, I will be assuming that landscape < 0 is water
-%           and thus unbuildable. Idk how to get around that 
-%           with only one plant, but that's what I'll try first.
+population = randfield(N,N,1,5);
+landscape = randfield(N,N,50,)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -158,20 +161,6 @@ function [state,edges] = propogateouttage(state,edges,k)
     
 end
 
-% Field maker
-function f = randfield(Nx,Ny,Nt,cutoff)
-    
-    % return a smooth, randomly varying field between zero and 1. As cutoff
-    % increases, the structure of the field becomes smaller wavelength. 
-    f = fftshift(fftn(rand(Ny,Nx,Nt)));
-    [Nx,Ny,Nt] = ndgrid(((1:Ny)-Ny/2),((1:Nx)-Nx/2),((1:Nt)-Nt/2));
-    f(sqrt(Nx.^2+Ny.^2+Nt.^2)>cutoff)=0;
-    f = ifftn(ifftshift(f),'symmetric');
-    f = f-min(f,[],'all');
-    f = f/max(f,[],'all');
-    
-end
-
 function plotstate(s,e)
 
 % imagesc(s)
@@ -211,7 +200,6 @@ ylim([0 1]);
 drawnow
 
 end
-
 function reccursiveplot(s,e,k)
 
 [y1,x1] = ind2sub(size(s),k);
@@ -335,8 +323,6 @@ else
     end
     
 end
-
-
 
 % m = round(m/4);
 % newmap = newmap(m+1:end-m,:);
