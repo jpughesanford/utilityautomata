@@ -170,6 +170,10 @@ p(2) = sum(s(:)== 1);
 p(3) = sum(s(:)==-1);
 P = p/sum(p);
 bar(P);
+xticks(1:3);
+xticklabels({'decentral','central','out'});
+text((1:numel(P))-.2,P+.02,num2cell(P))
+title('Average (in time) percent of grid that is...')
 text((1:numel(P))-.2,P+.02,num2cell(P))
 ylim([0 1]);
 drawnow
