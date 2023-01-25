@@ -1,8 +1,12 @@
 close all
 
-load('data/utilityfailurescan','plabel','p','clusternumber_distribution','clustersize_distribution','outtage_distribution','iii','jjj','p_join','p_outtage','p_plant','p_recover','N');
+load('data/utilityfailurescan','plabel','p','clustersize_distribution','outtage_distribution','iii','jjj','p_join','p_outtage','p_recover','N');
 
-clustersize_distribution(1,1,:) = 0;
-mesh(p_join,p_outtage,(mean(outtage_distribution,3)))
-xlabel('$p_{join}$','Interpreter','latex');
-ylabel('$p_{outtage}$','Interpreter','latex');
+x = p_outtage;
+for i = 1:size(clustersize_distribution,2)
+    y(i) = find(clustersize_distribution(1,i,:)>0,1,'last')/N^2;
+end
+plot(x,y)
+
+xlabel('$p_{out}$','Interpreter','latex');
+ylabel('cluster size','Interpreter','latex');
