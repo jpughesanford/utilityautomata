@@ -4,7 +4,7 @@ N = 32+1;
 
 % four probabilities make up the dynamics
 p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-p_join(1:10,1:10)=0;
+%p_join(1:10,1:10)=0;
 
 p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
@@ -14,13 +14,17 @@ p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile
 % make state of zeros
 s = zeros(N,N);
 s(round(N/2),round(N/2)) = 1;
-e = zeros(N^2,4);
+e = zeros(N^2,4); %keeps track of directional edges from pp to cent pixels
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%% Population and landscape infrastructure %%%%%%%%%%%%
 
-population = randfield(N,N,1,5);
+population = zeros(N,N);
+population(round(N/2),round(N/2)) = .5;
+population(round(N/3),round(N/3)) = 0.3;
+D = 0.1;
+dt = 0.001;
 
 lands = randfield(N,N,1,5);
 [landgradsx, landgradsy] = gradient(lands)
@@ -42,11 +46,13 @@ steepness = sqrt(landgradsy.^2+landgradsx.^2);
 %%
 figure;
 resizefigure(2,1);
-p = zeros(3,1);
-[II,JJ] = meshgrid(0:N-1,0:N-1);
+
 for k = 1:1000*N^2
     
-    p_join = sin(2*pi*JJ/N+.005*k)/2+1/2;
+%    population = rk4(population,D,dt);
+
+    %p_join = population;
+
     [s,e] = update(s,e,p_join,p_outtage,p_recover);
     
     if mod(k,N^2)==1
@@ -200,6 +206,8 @@ function dP = dPdt(P,D)
 lapP = del2(P);
  
 dP = P.*(1-P)+D*lapP;
+dP([1 end],:)=0;
+dP(:,[1 end])=0;
 
 end
 

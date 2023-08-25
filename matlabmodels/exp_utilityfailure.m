@@ -3,7 +3,7 @@ close all
 N = 32+1;
 
 % four probabilities make up the dynamics
-%p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
 %p_join(1:10,1:10)=0;
 
 p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
@@ -14,7 +14,7 @@ p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile
 % make state of zeros
 s = zeros(N,N);
 s(round(N/2),round(N/2)) = 1;
-e = zeros(N^2,4);
+e = zeros(N^2,4); %keeps track of directional edges from pp to cent pixels
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -49,12 +49,14 @@ resizefigure(2,1);
 
 for k = 1:1000*N^2
     
-    population = rk4(population,D,dt);
+%    population = rk4(population,D,dt);
 
-    p_join = population;
+    %p_join = population;
 
     [s,e] = update(s,e,p_join,p_outtage,p_recover);
-    
+
+    R = findradius(s)
+
     if mod(k,N^2)==1
         plotstate(s,e,p_join);
     end
@@ -505,3 +507,8 @@ end
 %
 % % set(gcf, 'colormap', newmap), colorbar
 end
+
+function R = findradius(s)
+
+s(s == -1) = 0
+
