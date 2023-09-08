@@ -224,9 +224,9 @@ function plotstate(s,e,p_join)
 
 [Ny,Nx] = size(s);
 
-subplot(1,2,1)
+subplot(1,3,1)
 imagesc(p_join);
-set(gca,'YDir','normal')
+% set(gca,'YDir','normal')
 hold on
 [yyy,xxx] = ind2sub(size(s),find(s==-1));
 scatter(xxx,yyy,150,'rs','filled')
@@ -238,7 +238,7 @@ caxis([-1 1]);
 % colormap(flip(rwb))
 ylim([1 Ny]);
 xlim([1 Nx]);
-subplot(1,2,2)
+subplot(1,3,2)
 p(1) = sum(s(:)== 0);
 p(2) = sum(s(:)== 1);
 p(3) = sum(s(:)==-1);
@@ -250,6 +250,21 @@ text((1:numel(P))-.2,P+.02,num2cell(P))
 title('Average (in time) percent of grid that is...')
 text((1:numel(P))-.2,P+.02,num2cell(P))
 ylim([0 1]);
+
+subplot(1,3,3)
+si = s;
+si(si==-1)=0;
+si = bwmorph(si,'remove');
+% ii = sort(unique(e(:)));
+% ii(1)=[];
+% ii(sum(e(ii,:),2)>0)=[];
+% si = s*0;
+% si(ii)=1;
+[L,n] = bwlabel(si);
+h = hist(L(:),0:n);
+[~,ii] = max(h(2:end));
+imagesc(L==ii)
+
 drawnow
 
 end
