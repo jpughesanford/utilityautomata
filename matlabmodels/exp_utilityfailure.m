@@ -511,4 +511,6 @@ end
 function R = findradius(s)
 
 s(s == -1) = 0
+BW=bwmorph(s,'remove')
+
 
