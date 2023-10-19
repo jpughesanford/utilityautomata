@@ -1,12 +1,12 @@
 close all
 
-N = 54+1;
+N = 32+1;
 
 % four probabilities make up the dynamics
 %p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
 %p_join(1:10,1:10)=0;
 
-p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
+p_outtage   = 0.0005; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
 
 %%%%%%%%%%%% create initial state %%%%%%%%%%%%
