@@ -3,9 +3,8 @@ close all
 N = 32+1;
 
 % four probabilities make up the dynamics
-p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
+%p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
 %p_join(1:10,1:10)=0;
-%p_join      = 0.1;
 
 p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
@@ -15,22 +14,21 @@ p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile
 % make state of zeros
 s = zeros(N,N);
 s(round(N/2),round(N/2)) = 1;
-e = zeros(N^2,4); %keeps track of directional edges from pp to cent pixels
-cent_pixel = s(round(N/2),round(N/2));
+e = zeros(N^2,4);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%% Population and landscape infrastructure %%%%%%%%%%%%
 
-% population = zeros(N,N);
-% population(round(N/2),round(N/2)) = .5;
-% population(round(N/3),round(N/3)) = 0.3;
-% D = 0.1;
-% dt = 0.001;
-% 
-% lands = randfield(N,N,1,5);
-% [landgradsx, landgradsy] = gradient(lands);
-% steepness = sqrt(landgradsy.^2+landgradsx.^2);
+population = zeros(N,N);
+population(round(N/2),round(N/2)) = .5;
+population(round(N/3),round(N/3)) = 0.3;
+D = 0.1;
+dt = 0.001;
+
+lands = randfield(N,N,1,5);
+[landgradsx, landgradsy] = gradient(lands)
+steepness = sqrt(landgradsy.^2+landgradsx.^2);
 
 % Wishlist: find a way to get the gradient of the landscape one
 %           so I can use that as my metric for increasing or 
@@ -45,37 +43,23 @@ cent_pixel = s(round(N/2),round(N/2));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Init for histogram data
-binCount = 20;
-histData = zeros(1, binCount);
-
 %%
 figure;
 resizefigure(2,1);
 
 for k = 1:1000*N^2
     
-%    population = rk4(population,D,dt);
+    population = rk4(population,D,dt);
 
-    %p_join = population;
+    p_join = population;
 
     [s,e] = update(s,e,p_join,p_outtage,p_recover);
-
-    avgDistance = averageDistances(s, e);
-    %fprintf('Average distance from end pixels to origin: %.2f\n', avgDistance);
-
-    % Update the histogram data
-    [histCounts, histEdges] = histcounts(avgDistance, binCount);
-    histData = histData + histCounts;
-
+    
     if mod(k,N^2)==1
-        %plotstate(s,e,p_join);
-        plotstate(s,e,p_join,histEdges,histData);
+        plotstate(s,e,p_join);
     end
-
+    
 end
-
-
 
 function v =mod1(v,N)
 v = mod(v-1,N)+1;
@@ -227,7 +211,7 @@ dP(:,[1 end])=0;
 
 end
 
-function plotstate(s,e,p_join,histEdges,histData)
+function plotstate(s,e,p_join)
 
 % imagesc(s)
 % hold on
@@ -242,7 +226,7 @@ function plotstate(s,e,p_join,histEdges,histData)
 
 subplot(1,3,1)
 imagesc(p_join);
-set(gca,'YDir','normal')
+% set(gca,'YDir','normal')
 hold on
 [yyy,xxx] = ind2sub(size(s),find(s==-1));
 scatter(xxx,yyy,150,'rs','filled')
@@ -266,11 +250,20 @@ text((1:numel(P))-.2,P+.02,num2cell(P))
 title('Average (in time) percent of grid that is...')
 text((1:numel(P))-.2,P+.02,num2cell(P))
 ylim([0 1]);
+
 subplot(1,3,3)
-histogram('BinEdges', histEdges, 'BinCounts', histData); %, 'DisplayStyle', 'stairs'
-title('Average Distances Histogram');
-xlabel('Average Distance');
-ylabel('Frequency');
+si = s;
+si(si==-1)=0;
+si = bwmorph(si,'remove');
+% ii = sort(unique(e(:)));
+% ii(1)=[];
+% ii(sum(e(ii,:),2)>0)=[];
+% si = s*0;
+% si(ii)=1;
+[L,n] = bwlabel(si);
+h = hist(L(:),0:n);
+[~,ii] = max(h(2:end));
+imagesc(L==ii)
 
 drawnow
 
@@ -526,57 +519,4 @@ end
 % end
 %
 % % set(gcf, 'colormap', newmap), colorbar
-end
-
-%function R = findradius(s)
-
-%s(s == -1) = 0
-%BW=bwmorph(s,'remove')
-
-%end
-
-function avgDist = averageDistances(s, e)
-    [Ny, Nx] = size(s);
-    
-    % Find the origin pixel
-    origin = [round(Ny/2), round(Nx/2)];
-    
-    % Initialize variables to store the total distance and count
-    totalDist = 0;
-    count = 0;
-    
-    % Iterate over centralized pixels to find the end of branches
-    for k = 1:Ny*Nx
-        [i, j] = ind2sub([Ny, Nx], k);
-        
-        if s(i, j) == 1
-            % This is a centralized pixel
-            isEndOfBranch = true;
-            
-            % Check if it has children
-            for n = 1:size(e, 2)
-                childIndex = e(k, n);
-                
-                if childIndex > 0
-                    isEndOfBranch = false;
-                    break;
-                end
-            end
-            
-            if isEndOfBranch
-                % Calculate the Euclidean distance from the end pixel to the origin
-                dist = sqrt((i - origin(1))^2 + (j - origin(2))^2);
-                totalDist = totalDist + dist;
-                count = count + 1;
-            end
-        end
-    end
-    
-    if count > 0
-        % Calculate the average distance
-        avgDist = totalDist / count;
-    else
-        avgDist = NaN; % No end pixels found
-    end
-    fprintf('Average distance from end pixels to origin: %.2f\n', avgDist);
 end
