@@ -5,7 +5,7 @@ N = 32+1;
 % four probabilities make up the dynamics
 %p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
 %p_join(1:10,1:10)=0;
-p_join      = []
+p_join      = zeros(N,N)+1;
 
 p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
@@ -45,8 +45,8 @@ steepness = sqrt(landgradsy.^2+landgradsx.^2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Init for histogram data
-binCount = 20;
-histData = zeros(1, binCount);
+binEdges = linspace(0,ceil(sqrt(2)*N),21);
+histData = zeros(1, 20);
 
 %%
 figure;
@@ -56,8 +56,7 @@ for k = 1:1000*N^2
     
     %population = rk4(population,D,dt);
 
-    p_join = population;
-    p_join = 0.1;
+    %p_join = population;
 
     [s,e] = update(s,e,p_join,p_outtage,p_recover);
     
@@ -65,10 +64,9 @@ for k = 1:1000*N^2
     %fprintf('Average distance from end pixels to origin: %.2f\n', avgDistance);
 
     % Update the histogram data
-    [histCounts, histEdges] = histcounts(avgDistance, binCount);
-    histData = histData + histCounts;
+    histData = histData + histcounts(avgDistance, binEdges);
 
-    if mod(k,N^2)==1
+    if mod(k,1)==0
         plotstate(s,e,p_join,histEdges,histData);
     end
     
@@ -542,6 +540,9 @@ end
 end
 
 function avgDist = averageDistances(s, e)
+
+    % SUPREME CODE 
+
     [Ny, Nx] = size(s);
     
     % Find the origin pixel
@@ -584,5 +585,5 @@ function avgDist = averageDistances(s, e)
     else
         avgDist = NaN; % No end pixels found
     end
-    fprintf('Average distance from end pixels to origin: %.2f\n', avgDist);
+    fprintf('Average distance from end pixels to origin: %.8f\n', avgDist);
 end
