@@ -1,74 +1,47 @@
 close all
 
 N = 32+1;
-
-% four probabilities make up the dynamics
-%p_join      = randfield(N,N,1,5)/10; % probability that a de-central node becomes central if its neighbor is central. Compounds linearly with how many neighbors are central
-%p_join(1:10,1:10)=0;
-p_join      = zeros(N,N)+.5;
-
 p_outtage   = 0.005; % probability that a centralized nodes undergoes an outtage
 p_recover   = 1.00; % probability that an outtage is fixed. this leaves the tile decentral
+p_join_list = flip(logspace(-3,-1,100));
 
-%%%%%%%%%%%% create initial state %%%%%%%%%%%%
-%%
-% make state of zeros
-s = zeros(N,N);
-s(round(N/2),round(N/2)) = 1;
-e = zeros(N^2,4);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%% Population and landscape infrastructure %%%%%%%%%%%%
-
-population = zeros(N,N);
-population(round(N/2),round(N/2)) = .5;
-population(round(N/3),round(N/3)) = 0.3;
-D = 0.1;
-dt = 0.001;
-
-lands = randfield(N,N,1,5);
-[landgradsx, landgradsy] = gradient(lands)
-steepness = sqrt(landgradsy.^2+landgradsx.^2);
-
-% Wishlist: find a way to get the gradient of the landscape one
-%           so I can use that as my metric for increasing or 
-%           decreasing probs. 
-% Current approach: use just the plain value as the metric. Less
-%           good because you can have a plateau high up that's 
-%           still easy to build on. It's the slopes that really 
-%           make things hard. 
-%           Also, I will be assuming that landscape < 0 is water
-%           and thus unbuildable. Idk how to get around that 
-%           with only one plant, but that's what I'll try first.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Init for histogram data
-binEdges = linspace(0,ceil(sqrt(2)*N),21);
-histData = zeros(1, 20);
-
-%%
-figure;
-resizefigure(2,2);
-
-for k = 1:1000*N^2
+mkdir hannahsdata
+for p = 1:numel(p_join_list)
     
-    %population = rk4(population,D,dt);
+    p_join = p_join_list(p);
+    p_join_matrix = zeros(N,N)+p_join;
 
-    %p_join = population;
+    %%%%%%%%%%%% create initial state %%%%%%%%%%%%
+    %%
+    % make state of zeros
+    s = zeros(N,N);
+    s(round(N/2),round(N/2)) = 1;
+    e = zeros(N^2,4);
 
-    [s,e] = update(s,e,p_join,p_outtage,p_recover);
-    
-    avgDistance = averageDistances(s, e);
-    %fprintf('Average distance from end pixels to origin: %.2f\n', avgDistance);
+    % Init for histogram data
+    binEdges = 0:ceil(sqrt(2)*N);
+    histData = zeros(1, numel(binEdges)-1);
 
-    % Update the histogram data
-    histData = histData + histcounts(avgDistance, binEdges);
+    for k = 1:1000*N^2
 
-    if mod(k,1)==0
-        plotstate(s,e,p_join,histEdges,histData);
+        %population = rk4(population,D,dt);
+
+        %p_join = population;
+
+        [s,e] = update(s,e,p_join_matrix,p_outtage,p_recover);
+
+        avgDistance = averageDistances(s, e);
+        %fprintf('Average distance from end pixels to origin: %.2f\n', avgDistance);
+
+        % Update the histogram data
+        histData = histData + histcounts(avgDistance, binEdges);
+        
     end
+    
+    bar((binEdges(2:end)+binEdges(1:end-1))/2,histData)
+    drawnow 
+    
+    save(sprintf('hannahsdata/distance_histogram_for_pjoin_%.2e.mat',p_join),'histData','binEdges','p_join')
     
 end
 
@@ -585,5 +558,5 @@ function avgDist = averageDistances(s, e)
     else
         avgDist = NaN; % No end pixels found
     end
-    fprintf('Average distance from end pixels to origin: %.8f\n', avgDist);
+%     fprintf('Average distance from end pixels to origin: %.8f\n', avgDist);
 end
